@@ -3,6 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { PhoneOff, Mic, MicOff, Video, VideoOff, Pill } from "lucide-react";
 import { MedicineList } from "./MedicineList";
+import { io } from "socket.io-client"; // Import socket.io-client
+
+const socket = io("http://localhost:4000"); // Replace with your backend URL
 
 interface Medicine {
   name: string;
@@ -58,6 +61,15 @@ export default function VideoCallInterface({
     }
   };
 
+  const handlePrescribeMedicines = (prescriptions: { name: string; quantity: number }[]) => {
+    // Emit the prescribed medicines to the vending machine
+    socket.emit("prescribe-medicines", {
+      patientId: patientData?.patientId,
+      prescriptions,
+    });
+    console.log("Prescribed medicines sent:", prescriptions);
+  };
+
   return (
     <motion.div
       className="fixed inset-0 bg-black z-50"
@@ -94,7 +106,10 @@ export default function VideoCallInterface({
             exit={{ opacity: 0, x: 100 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
-            <MedicineList patientData={patientData} />
+            <MedicineList
+              patientData={patientData}
+              onPrescribe={handlePrescribeMedicines} // Pass the handler to MedicineList
+            />
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import type React from "react";
 import { Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useVendingMachine } from "@/context/VendingMachineContext";

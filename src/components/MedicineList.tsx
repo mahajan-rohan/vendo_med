@@ -25,9 +25,10 @@ interface PatientData {
 
 interface MedicineListProps {
   patientData: PatientData;
+  onPrescribe: any;
 }
 
-export function MedicineList({ patientData }: MedicineListProps) {
+export function MedicineList({ patientData, onPrescribe }: MedicineListProps) {
   const [selectedMedicines, setSelectedMedicines] = useState<{
     [key: string]: number;
   }>({});
@@ -59,10 +60,13 @@ export function MedicineList({ patientData }: MedicineListProps) {
   };
 
   const prescribeMedicines = () => {
-    const prescribedMedicines = Object.entries(selectedMedicines).map(
-      ([name, quantity]) => ({ name, quantity })
+    const prescriptions = Object.entries(selectedMedicines).map(
+      ([name, quantity]) => ({
+        name,
+        quantity,
+      })
     );
-    console.log("Prescribed Medicines:", prescribedMedicines);
+    onPrescribe(prescriptions); // Call the handler passed from VideoCallInterface
   };
 
   return (

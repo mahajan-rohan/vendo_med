@@ -1,22 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Phone, Menu } from "lucide-react";
+import { Menu, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { io } from "socket.io-client";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import DiagnosisSidebar from "./_components/DiagnosisSidebar";
 import VideoSection from "./_components/VideoSection";
 import { useVendingMachine } from "@/context/VendingMachineContext";
 import Footer from "./_components/Footer";
-
-interface Diagnosis {
-  temperature: string;
-  bloodPressure: string;
-  heartRate: string;
-  oxygenSaturation: string;
-  bmi: string;
-}
+import AdminPanel from "./_components/AdminPanel";
 
 const socket = io("http://localhost:4000");
 
@@ -29,6 +21,7 @@ export default function VendingMachineScreen() {
     showSidebar,
     setShowSidebar,
   } = useVendingMachine();
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
 
   useEffect(() => {
     if (analyzing) {
@@ -44,32 +37,56 @@ export default function VendingMachineScreen() {
       }, 500);
       return () => clearInterval(timer);
     }
-  }, [analyzing]);
+  }, [analyzing, setAnalyzing, setProgress]);
 
   const startAnalysis = () => {
     setAnalyzing(true);
     setProgress(0);
   };
 
-  return (
-    <div>
+  if (showAdminPanel) {
+    return (
       <div className="flex h-screen w-full bg-gray-100">
         <main className="flex-1 flex flex-col min-h-screen">
-          <Header />
-          <VideoSection socket={socket} />
-          <Footer onStartAnalysis={startAnalysis} />
+          <header className="bg-primary text-primary-foreground p-4 flex justify-between items-center">
+            <h1 className="text-2xl font-bold">MediVend Admin Panel</h1>
+            <Button
+              variant="outline"
+              className="bg-black/10 hover:bg-black/20"
+              onClick={() => setShowAdminPanel(false)}
+            >
+              Exit Admin Mode
+            </Button>
+          </header>
+          <div className="flex-1 overflow-auto">
+            <AdminPanel />
+          </div>
         </main>
-        {/* <Sidebar className="w-80 border-l relative"> */}
-        {showSidebar && (
-          <DiagnosisSidebar analyzing={analyzing} progress={progress} />
-        )}
-        {/* </Sidebar> */}
       </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen w-full bg-gray-100">
+      <main className="flex-1 flex flex-col min-h-screen">
+        <Header setShowAdminPanel={setShowAdminPanel} />
+        <div className="flex-1 overflow-auto">
+          <VideoSection socket={socket} />
+        </div>
+        <Footer onStartAnalysis={startAnalysis} />
+      </main>
+      {showSidebar && (
+        <DiagnosisSidebar analyzing={analyzing} progress={progress} />
+      )}
     </div>
   );
 }
 
-function Header() {
+function Header({
+  setShowAdminPanel,
+}: {
+  setShowAdminPanel: (show: boolean) => void;
+}) {
   const { setShowSidebar } = useVendingMachine();
 
   return (
@@ -77,20 +94,19 @@ function Header() {
       <h1 className="text-2xl font-bold">MediVend Health Station</h1>
       <div className="flex items-center space-x-4">
         <span className="text-sm">Status: Online 🟢</span>
-        {/* <Select>
-          <SelectTrigger className="w-[120px]">
-            <SelectValue placeholder="Language" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="en">English</SelectItem>
-            <SelectItem value="es">Español</SelectItem>
-            <SelectItem value="fr">Français</SelectItem>
-          </SelectContent>
-        </Select> */}
         <Button
           variant="outline"
           size="icon"
-          className="bg-black"
+          className="bg-black/10 hover:bg-black/20"
+          onClick={() => setShowAdminPanel(true)}
+          title="Admin Panel"
+        >
+          <Settings className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="bg-black/10 hover:bg-black/20"
           onClick={() => {
             setShowSidebar((prev: boolean) => !prev);
           }}

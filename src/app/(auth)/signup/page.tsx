@@ -121,7 +121,9 @@ export default function DoctorSignup() {
           confirmPassword: "",
         });
 
-        console.log("Doctor REgiserd");
+        const data = await response.json();
+        console.log("Doctor Regiserd", data);
+        localStorage.setItem("token", data.token);
         router.push("/dashboard");
       } catch (error: any) {
         console.error("Error during signup:", error);
