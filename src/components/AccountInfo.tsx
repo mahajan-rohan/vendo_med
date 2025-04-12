@@ -19,7 +19,7 @@ export default function AccountInfo() {
   useEffect(() => {
     const fetchDoctorData = async () => {
       try {
-        const response = await fetch("http://localhost:4000/api/doctors/me", {
+        const response = await fetch("http://localhost:4000/api/doctors/details", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

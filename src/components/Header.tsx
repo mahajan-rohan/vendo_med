@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useKit } from "@/context/DoctorContext";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
-  const { notificationsList, setNotificationsList } = useKit();
+  const { notificationsList, setNotificationsList, doctorInfo } = useKit();
   const [showNotifications, setShowNotifications] = useState(false);
+  const router = useRouter();
 
   const unreadCount = notificationsList.filter(
     (n: (typeof notificationsList)[0]) => !n.read
@@ -27,12 +29,18 @@ export default function Header() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    router.push("/login"); // or "/" depending on where you want to redirect
+  };
+
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm py-4 px-6 flex justify-between items-center transition-colors duration-200">
       <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-        Welcome, Dr. Developer
+        Welcome, Dr. {doctorInfo?.name || ""}
       </h2>
-      <div className="relative">
+
+      <div className="flex items-center gap-4 relative">
         <Button
           size="icon"
           variant="ghost"
@@ -46,8 +54,19 @@ export default function Header() {
             </span>
           )}
         </Button>
+
+        <Button
+          size="icon"
+          variant="ghost"
+          className="rounded-full"
+          onClick={handleLogout}
+          title="Logout"
+        >
+          <LogOut size={24} className="text-gray-600 dark:text-gray-300" />
+        </Button>
+
         {showNotifications && (
-          <Card className="absolute right-0 mt-2 w-80 max-h-96 overflow-auto z-50 bg-white dark:bg-gray-700 shadow-lg rounded-md transition-all duration-200 ease-in-out">
+          <Card className="absolute right-0 top-12 w-80 max-h-96 overflow-auto z-50 bg-white dark:bg-gray-700 shadow-lg rounded-md transition-all duration-200 ease-in-out">
             <div className="p-4">
               <h3 className="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">
                 Notifications

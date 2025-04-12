@@ -1,11 +1,15 @@
-import { type RefObject, useState } from "react";
+"use client";
+
+import { type RefObject, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { PhoneOff, Mic, MicOff, Video, VideoOff, Pill } from "lucide-react";
 import { MedicineList } from "./MedicineList";
-import { io } from "socket.io-client"; // Import socket.io-client
+import { io } from "socket.io-client";
+import { useKit } from "@/context/DoctorContext";
+import { useToast } from "@/components/ui/use-toast";
 
-const socket = io("http://localhost:4000"); // Replace with your backend URL
+const socket = io("http://localhost:4000");
 
 interface Medicine {
   name: string;
@@ -16,12 +20,13 @@ interface Medicine {
 
 interface PatientData {
   id: number;
-  patientId: string;
+  patientId?: string;
   name: string;
   age: number;
   symptoms: string;
   urgency: string;
-  medicinesAvailable: Medicine[];
+  medicinesAvailable?: Medicine[];
+  signal?: any;
 }
 
 interface VideoCallInterfaceProps {
@@ -30,7 +35,7 @@ interface VideoCallInterfaceProps {
   patientName: string;
   onEndCall: () => void;
   isDoctor?: boolean;
-  patientData?: PatientData;
+  patientData?: PatientData | null;
 }
 
 export default function VideoCallInterface({
@@ -44,6 +49,41 @@ export default function VideoCallInterface({
   const [isMicOn, setIsMicOn] = useState(true);
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [showMedicineList, setShowMedicineList] = useState(false);
+  const [prescribedMedicines, setPrescribedMedicines] = useState<
+    { name: string; quantity: number }[]
+  >([]);
+  const [diagnosis, setDiagnosis] = useState("");
+  const { doctorInfo, setConsultationHistory } = useKit();
+  const { toast } = useToast();
+
+  // Get medicines from the vending machine context or use default
+  const [medicinesAvailable, setMedicinesAvailable] = useState<Medicine[]>([
+    {
+      name: "Paracetamol",
+      tablets: 10,
+      dosage: "500mg",
+      indications: "Fever, Pain relief",
+    },
+    {
+      name: "Ibuprofen",
+      tablets: 20,
+      dosage: "400mg",
+      indications: "Pain relief, Inflammation",
+    },
+    {
+      name: "Amoxicillin",
+      tablets: 15,
+      dosage: "250mg",
+      indications: "Bacterial infections",
+    },
+  ]);
+
+  useEffect(() => {
+    // If patient data has medicines available, use those
+    if (patientData?.medicinesAvailable) {
+      setMedicinesAvailable(patientData.medicinesAvailable);
+    }
+  }, [patientData]);
 
   const toggleMic = () => {
     if (localVideoRef.current && localVideoRef.current.srcObject) {
@@ -61,7 +101,12 @@ export default function VideoCallInterface({
     }
   };
 
-  const handlePrescribeMedicines = (prescriptions: { name: string; quantity: number }[]) => {
+  const handlePrescribeMedicines = (
+    prescriptions: { name: string; quantity: number }[]
+  ) => {
+    // Save the prescriptions to state
+    setPrescribedMedicines(prescriptions);
+
     // Emit the prescribed medicines to the vending machine
     socket.emit("prescribe-medicines", {
       patientId: patientData?.patientId,
@@ -69,6 +114,121 @@ export default function VideoCallInterface({
     });
     console.log("Prescribed medicines sent:", prescriptions);
   };
+
+  const handleEndCall = async () => {
+    // If doctor is ending the call, save the consultation
+    if (isDoctor && patientData) {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "User token not found. Please login again.",
+          });
+          return;
+        }
+        // Create a new consultation record
+        const newConsultation = {
+          id: `consultation-${Date.now()}`,
+          patientName: patientData.name,
+          patientId: patientData.patientId,
+          date: new Date(),
+          diagnosis: diagnosis || "General consultation",
+          prescription: prescribedMedicines,
+          symptoms: patientData.symptoms,
+        };
+
+        const consultation = {
+          doctorId: doctorInfo?.id,
+          licenseNumber: doctorInfo?.licenseNumber,
+          patientId: patientData?.patientId,
+          patientName: patientData?.name,
+          diagnosis: diagnosis || "General consultation",
+          prescription: prescribedMedicines.map((med) => ({
+            name: med.name,
+            quantity: med.quantity,
+          })),
+          symptoms: patientData?.symptoms || "",
+        };
+
+        // Add to local consultation history
+        setConsultationHistory((prev) => [newConsultation, ...prev]);
+
+        // Save to localStorage for persistence
+        const storedConsultations = localStorage.getItem("consultationHistory");
+        let consultations = [];
+
+        if (storedConsultations) {
+          try {
+            consultations = JSON.parse(storedConsultations);
+          } catch (error) {
+            console.error("Error parsing stored consultations:", error);
+          }
+        }
+
+        consultations.unshift(newConsultation);
+        localStorage.setItem(
+          "consultationHistory",
+          JSON.stringify(consultations)
+        );
+
+        // Emit socket event for real-time updates
+        socket.emit("end-call", {
+          doctorId: doctorInfo.id,
+          patientId: patientData.patientId,
+          patientName: patientData.name,
+          diagnosis: diagnosis || "General consultation",
+          prescription: prescribedMedicines,
+        });
+
+        console.log({ ...consultation });
+
+        const res = await fetch("http://localhost:4000/api/consultations", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ ...consultation }),
+        });
+
+        const result = await res.json();
+        if (!result.success) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: result.message,
+          });
+        } else {
+          toast({
+            title: "Consultation Saved",
+            description: "The consultation was successfully recorded.",
+          });
+        }
+      } catch (error) {
+        console.error("Error saving consultation:", error);
+        toast({
+          title: "Error",
+          description: "Failed to save consultation record.",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    }
+
+    // Call the parent onEndCall function
+    onEndCall();
+  };
+
+  // Create a patient data object with medicines if not provided
+  const enhancedPatientData = patientData
+    ? {
+        ...patientData,
+        medicinesAvailable:
+          patientData.medicinesAvailable || medicinesAvailable,
+      }
+    : null;
 
   return (
     <motion.div
@@ -98,7 +258,7 @@ export default function VideoCallInterface({
         />
       </motion.div>
       <AnimatePresence>
-        {showMedicineList && (
+        {showMedicineList && enhancedPatientData && (
           <motion.div
             className="absolute top-4 right-4 w-1/3 max-w-md z-10"
             initial={{ opacity: 0, x: 100 }}
@@ -107,8 +267,9 @@ export default function VideoCallInterface({
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
             <MedicineList
-              patientData={patientData}
-              onPrescribe={handlePrescribeMedicines} // Pass the handler to MedicineList
+              patientData={enhancedPatientData}
+              onPrescribe={handlePrescribeMedicines}
+              onDiagnosisChange={(value: string) => setDiagnosis(value)}
             />
           </motion.div>
         )}
@@ -152,7 +313,7 @@ export default function VideoCallInterface({
             <Pill className="h-4 w-4" />
           </Button>
         )}
-        <Button variant="destructive" size="icon" onClick={onEndCall}>
+        <Button variant="destructive" size="icon" onClick={handleEndCall}>
           <PhoneOff className="h-4 w-4" />
         </Button>
       </motion.div>

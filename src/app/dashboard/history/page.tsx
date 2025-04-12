@@ -1,5 +1,10 @@
+"use client";
+
+import { useKit } from "@/context/DoctorContext";
 import PatientHistory from "../../../components/PatientHistory";
 
 export default function HistoryPage() {
-  return <PatientHistory />;
+  const { doctorInfo } = useKit();
+
+  return <PatientHistory doctorId={doctorInfo.id} />;
 }
