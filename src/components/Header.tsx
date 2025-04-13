@@ -34,6 +34,13 @@ export default function Header() {
     router.push("/login"); // or "/" depending on where you want to redirect
   };
 
+  const testSound = () => {
+    const audio = new Audio("/sounds/bell.mp3");
+    audio.play().catch((err) => {
+      console.error("Failed to play sound:", err);
+    });
+  };
+
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm py-4 px-6 flex justify-between items-center transition-colors duration-200">
       <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
@@ -45,7 +52,10 @@ export default function Header() {
           size="icon"
           variant="ghost"
           className="rounded-full relative"
-          onClick={toggleNotifications}
+          onClick={() => {
+            toggleNotifications();
+            testSound();
+          }}
         >
           <Bell size={24} className="text-gray-600 dark:text-gray-300" />
           {unreadCount > 0 && (

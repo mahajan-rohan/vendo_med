@@ -2,8 +2,7 @@
 import { useKit } from "@/context/DoctorContext";
 import Header from "../../components/Header";
 import Sidebar from "../../components/Sidebar";
-import { useEffect } from "react";
-
+import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { useRouter } from "next/navigation";
 
@@ -22,47 +21,79 @@ export default function DashboardLayout({
   } = useKit();
   const router = useRouter();
 
+  const [canPlaySound, setCanPlaySound] = useState(false);
+
+  // ✅ Wait for first user interaction to allow audio
+  useEffect(() => {
+    const enableSound = () => {
+      setCanPlaySound(true);
+      window.removeEventListener("click", enableSound);
+      window.removeEventListener("keydown", enableSound);
+    };
+
+    window.addEventListener("click", enableSound);
+    window.addEventListener("keydown", enableSound);
+
+    return () => {
+      window.removeEventListener("click", enableSound);
+      window.removeEventListener("keydown", enableSound);
+    };
+  }, []);
+
+  // 🔌 Initialize socket connection
   useEffect(() => {
     const socket = io("http://localhost:4000");
     setSocket(socket);
   }, []);
 
   useEffect(() => {
-    console.log(socket);
-  }, [socket]);
-
-  useEffect(() => {
     const handleIncomingCall = ({ signal, patient }: any) => {
       setPatientsList((prev) => [...prev, patient]);
-      console.log("incoming call", patient);
 
-      setNotificationsList((prev) => [
-        ...prev,
-        {
-          id: prev.length + 1,
-          message: `New patient request from ${patient.name}`,
-          read: false,
-        },
-      ]);
+      setNotificationsList((prev) => {
+        if (canPlaySound) {
+          const bell = new Audio("/sounds/bell.mp3");
+          bell.play().catch((err) => {
+            console.error("🔇 Failed to play bell:", err);
+          });
+        }
+
+        return [
+          ...prev,
+          {
+            id: prev.length + 1,
+            message: `New patient request from ${patient.name}`,
+            read: false,
+          },
+        ];
+      });
     };
 
-    socket?.on("connect", () => {
-      console.log("connected", socket?.id);
-
-      socket?.on("incoming-call", handleIncomingCall);
-    });
+    if (socket) {
+      socket.on("connect", () => {
+        socket.on("incoming-call", handleIncomingCall);
+      });
+    }
 
     return () => {
       socket?.off("incoming-call", handleIncomingCall);
     };
-  }, [socket]);
+  }, [socket, canPlaySound, notificationsList]);
 
   useEffect(() => {
     const validUser = localStorage.getItem("token");
     if (!validUser) {
       router.push("/login");
     }
-  });
+  }, []);
+
+  useEffect(() => {
+    const unreadCount = notificationsList.filter((n) => !n.read).length;
+    document.title =
+      unreadCount > 0
+        ? `(${unreadCount}) Doctor Dashboard`
+        : "Doctor Dashboard";
+  }, [notificationsList]);
 
   return (
     <div className="flex h-screen">
