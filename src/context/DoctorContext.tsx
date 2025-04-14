@@ -5,6 +5,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 import type { SignalData } from "simple-peer";
 import type { Socket } from "socket.io-client";
 import { v4 as uuidv4 } from "uuid";
+import { usePathname } from "next/navigation";
 
 interface callType {
   id: number;
@@ -99,6 +100,7 @@ export const KitProvider: React.FC<{
   const [consultationHistory, setConsultationHistory] = useState<
     ConsultationRecord[]
   >([]);
+  const pathname = usePathname();
 
   useEffect(() => {
     // Initialize doctorInfo on the client side
@@ -176,7 +178,9 @@ export const KitProvider: React.FC<{
         console.error("Error fetching doctor info:", error);
       }
     };
-    fetchDoctorInfo();
+    if (pathname !== "/" && pathname !== "/vm") {
+      fetchDoctorInfo();
+    }
   }, []);
 
   return (

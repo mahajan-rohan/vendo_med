@@ -91,8 +91,8 @@ export default function DashboardLayout({
     const unreadCount = notificationsList.filter((n) => !n.read).length;
     document.title =
       unreadCount > 0
-        ? `(${unreadCount}) Doctor Dashboard`
-        : "Doctor Dashboard";
+        ? `(${unreadCount}) VendoMed`
+        : "VendoMed";
   }, [notificationsList]);
 
   return (

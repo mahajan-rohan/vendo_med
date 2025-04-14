@@ -142,6 +142,13 @@ export default function PatientRequests() {
     console.log(doctorInfo);
   }, [doctorInfo]);
 
+  useEffect(() => {
+    if (socket) {
+      socket.emit("doctor-online");
+    }
+  }, [socket]);
+
+
   return (
     <div>
       {isWaiting && (

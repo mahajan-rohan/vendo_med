@@ -3,12 +3,13 @@
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { Button } from "@/components/ui/button";
 import VideoCallInterface from "@/components/VideoCallInterface";
-import { Video } from "lucide-react";
-import { useRef, useState } from "react";
+import { Video, UserRound } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import type { io } from "socket.io-client";
 import Peer from "simple-peer";
 import PatientInfoForm, { type PatientFormData } from "./PatientInfoForm";
 import { useVendingMachine } from "@/context/VendingMachineContext";
+import { Badge } from "@/components/ui/badge";
 
 function VideoSection({ socket }: { socket: ReturnType<typeof io> }) {
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -19,6 +20,7 @@ function VideoSection({ socket }: { socket: ReturnType<typeof io> }) {
   const [patientInfo, setPatientInfo] = useState<PatientFormData | null>(null);
   const myVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const [doctorCount, setDoctorCount] = useState<number>(0);
   const { medicinesList } = useVendingMachine();
 
   const handleFormSubmit = (data: PatientFormData) => {
@@ -63,10 +65,12 @@ function VideoSection({ socket }: { socket: ReturnType<typeof io> }) {
         });
 
         // Listen for the doctor's signal
+        socket.off("doctor-accepted");
         socket.on("doctor-accepted", ({ signal }) => {
           peer.signal(signal);
         });
 
+        socket.off("vending-machine-update");
         socket.on("vending-machine-update", (data) => {
           console.log("Received data for vending machine:", data);
 
@@ -74,6 +78,7 @@ function VideoSection({ socket }: { socket: ReturnType<typeof io> }) {
         });
 
         // Stop the media stream and clean up
+
         socket.on("call-ended", () => {
           console.log("call ended");
 
@@ -111,6 +116,48 @@ function VideoSection({ socket }: { socket: ReturnType<typeof io> }) {
     setShowForm(true);
   };
 
+  useEffect(() => {
+    socket.off("update-doctor-count");
+    socket.on("update-doctor-count", (count: number) => {
+      setDoctorCount(count);
+    });
+
+    return () => {
+      socket.off("update-doctor-count");
+    };
+  }, [socket]);
+
+  // Function to determine the availability status and color
+  const getDoctorAvailabilityStatus = () => {
+    if (doctorCount === 0) {
+      return {
+        status: "No doctors available",
+        color: "bg-red-100 text-red-800 border-red-300",
+        waitTime: "Long wait expected",
+      };
+    } else if (doctorCount === 1) {
+      return {
+        status: "1 doctor available",
+        color: "bg-yellow-100 text-yellow-800 border-yellow-300",
+        waitTime: "Moderate wait expected",
+      };
+    } else if (doctorCount < 4) {
+      return {
+        status: `${doctorCount} doctors available`,
+        color: "bg-green-100 text-green-800 border-green-300",
+        waitTime: "Short wait expected",
+      };
+    } else {
+      return {
+        status: `${doctorCount} doctors available`,
+        color: "bg-green-100 text-green-800 border-green-300",
+        waitTime: "Minimal wait expected",
+      };
+    }
+  };
+
+  const { status, color, waitTime } = getDoctorAvailabilityStatus();
+
   return (
     <div className="flex flex-col items-center justify-center h-full w-full">
       {isWaiting && !showForm && !isLoading && (
@@ -118,6 +165,50 @@ function VideoSection({ socket }: { socket: ReturnType<typeof io> }) {
           <h1 className="text-3xl font-bold text-primary mb-4">
             MediVend Health Station
           </h1>
+
+          {/* Doctor Availability Card */}
+          <div className="w-full max-w-md mb-2">
+            <div
+              className={`rounded-lg border p-4 ${color} transition-all duration-300`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <UserRound className="h-5 w-5" />
+                  <span className="font-medium">{status}</span>
+                </div>
+                <Badge variant="outline" className={color}>
+                  {waitTime}
+                </Badge>
+              </div>
+
+              {doctorCount > 0 ? (
+                <div className="mt-3 flex justify-center">
+                  <div className="flex space-x-1">
+                    {[...Array(Math.min(doctorCount, 5))].map((_, i) => (
+                      <div
+                        key={i}
+                        className="h-2 w-8 rounded-full bg-current opacity-80"
+                      />
+                    ))}
+                    {[...Array(Math.max(5 - Math.min(doctorCount, 5), 0))].map(
+                      (_, i) => (
+                        <div
+                          key={i}
+                          className="h-2 w-8 rounded-full bg-current opacity-20"
+                        />
+                      )
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-2 text-sm">
+                  You can still submit your information and will be connected
+                  when a doctor becomes available.
+                </p>
+              )}
+            </div>
+          </div>
+
           <p className="text-center text-muted-foreground mb-4">
             Connect with a healthcare professional via video call for a
             consultation
@@ -140,7 +231,13 @@ function VideoSection({ socket }: { socket: ReturnType<typeof io> }) {
       {isLoading && !isConnected && (
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <LoadingAnimation />
-          <p className="mt-4 text-muted-foreground">Connecting to doctor...</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            {doctorCount > 0
+              ? `${doctorCount} ${
+                  doctorCount === 1 ? "doctor" : "doctors"
+                } currently available`
+              : "Waiting for a doctor to become available"}
+          </p>
         </div>
       )}
 
