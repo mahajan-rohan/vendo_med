@@ -22,6 +22,7 @@ function VideoSection({ socket }: { socket: ReturnType<typeof io> }) {
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const [doctorCount, setDoctorCount] = useState<number>(0);
   const { medicinesList } = useVendingMachine();
+  const [paymentQrImage, setPaymentQrImage] = useState<string | null>(null);
 
   const handleFormSubmit = (data: PatientFormData) => {
     setPatientInfo(data);
@@ -124,6 +125,17 @@ function VideoSection({ socket }: { socket: ReturnType<typeof io> }) {
 
     return () => {
       socket.off("update-doctor-count");
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    socket.on("receive-image", (data) => {
+      console.log("Received Payment QR Image:", data.image);
+      setPaymentQrImage(data.image); // Display the image on the vending machine side
+    });
+
+    return () => {
+      socket.off("receive-image");
     };
   }, [socket]);
 
@@ -268,6 +280,17 @@ function VideoSection({ socket }: { socket: ReturnType<typeof io> }) {
           isDoctor={false}
         />
       </div>
+
+      {paymentQrImage && (
+        <div className="mt-4">
+          <h3 className="text-lg font-semibold">Payment QR Code</h3>
+          <img
+            src={paymentQrImage}
+            alt="Payment QR Code"
+            className="max-h-48 rounded-lg mx-auto object-contain"
+          />
+        </div>
+      )}
     </div>
   );
 }

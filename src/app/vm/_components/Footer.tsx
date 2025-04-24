@@ -12,15 +12,15 @@ const Footer: React.FC<{
 
   return (
     <footer className="bg-gray-200 p-4 flex justify-between items-center">
-      <Button variant="destructive" className="flex items-center">
+      {/* <Button variant="destructive" className="flex items-center">
         <Phone className="mr-2 h-4 w-4" /> Emergency Call
-      </Button>
+      </Button> */}
       <Button
         onClick={() => {
           onStartAnalysis();
           setShowSidebar(true);
         }}
-        className="bg-green-500 hover:bg-green-600"
+        className="ml-auto bg-green-500 hover:bg-green-600"
       >
         Start Health Analysis
       </Button>

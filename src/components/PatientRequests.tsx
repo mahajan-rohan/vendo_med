@@ -52,6 +52,7 @@ export default function PatientRequests() {
   const [isWaiting, setIsWaiting] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [paymentQrImage, setPaymentQrImage] = useState<string | null>(null);
 
   const myVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -148,6 +149,18 @@ export default function PatientRequests() {
     }
   }, [socket]);
 
+  useEffect(() => {
+    socket?.on("receive-image", (data) => {
+      if (data.patientId === selectedPatient?.patientId) {
+        console.log("Received Payment QR Image:", data.image);
+        setPaymentQrImage(data.image); // Display the image on the patient side
+      }
+    });
+
+    return () => {
+      socket?.off("receive-image");
+    };
+  }, [socket, selectedPatient]);
 
   return (
     <div>
@@ -218,6 +231,17 @@ export default function PatientRequests() {
           patientData={selectedPatient}
         />
       </div>
+
+      {paymentQrImage && (
+        <div className="mt-4">
+          <h3 className="text-lg font-semibold">Payment QR Code</h3>
+          <img
+            src={paymentQrImage}
+            alt="Payment QR Code"
+            className="max-h-48 rounded-lg mx-auto object-contain"
+          />
+        </div>
+      )}
     </div>
   );
 }

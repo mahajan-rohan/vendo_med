@@ -37,6 +37,8 @@ export default function DoctorLogin() {
       setError(null);
       router.push("/dashboard");
     } catch (error: any) {
+      console.log(error);
+
       setError(error.message);
     }
   };
