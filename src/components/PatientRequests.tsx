@@ -94,7 +94,7 @@ export default function PatientRequests() {
         const peer = new Peer({ initiator: false, trickle: false, stream });
 
         peer.on("signal", (data) => {
-          socket?.emit("accept-call", { signal: data });
+          socket?.emit("accept-call", { signal: data, doctorId: socket.id });
         });
 
         peer.signal(patient.signal);

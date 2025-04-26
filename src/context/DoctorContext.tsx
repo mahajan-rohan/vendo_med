@@ -178,11 +178,7 @@ export const KitProvider: React.FC<{
         console.error("Error fetching doctor info:", error);
       }
     };
-    if (
-      pathname !== "/" &&
-      pathname !== "/vm" &&
-      pathname !== "/login"
-    ) {
+    if (pathname !== "/" && pathname !== "/vm" && pathname !== "/login") {
       fetchDoctorInfo();
     }
   }, []);

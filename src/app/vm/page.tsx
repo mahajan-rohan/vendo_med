@@ -20,8 +20,14 @@ export default function VendingMachineScreen() {
     setProgress,
     showSidebar,
     setShowSidebar,
+    socketVM,
+    setSocketVM,
   } = useVendingMachine();
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+
+  useEffect(() => {
+    setSocketVM(socket.id ?? null);
+  }, []);
 
   useEffect(() => {
     if (analyzing) {

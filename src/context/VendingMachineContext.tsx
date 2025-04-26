@@ -54,6 +54,8 @@ interface VendingMachineContextType {
   setShowSidebar: React.Dispatch<React.SetStateAction<boolean>>;
   medicinesList: Medicine[];
   updateMedicinesList: React.Dispatch<React.SetStateAction<Medicine[]>>;
+  socketVM: string | null;
+  setSocketVM: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 const VendingMachineContext = createContext<
@@ -68,6 +70,7 @@ export const VendingMachineProvider: React.FC<{
   const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
   const [showSidebar, setShowSidebar] = useState(false);
   const [medicinesList, updateMedicinesList] = useState(medicinesData);
+  const [socketVM, setSocketVM] = useState<string | null>(null);
 
   return (
     <VendingMachineContext.Provider
@@ -82,6 +85,8 @@ export const VendingMachineProvider: React.FC<{
         setShowSidebar,
         medicinesList,
         updateMedicinesList,
+        socketVM,
+        setSocketVM,
       }}
     >
       {children}

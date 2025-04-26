@@ -23,6 +23,7 @@ function VideoSection({ socket }: { socket: ReturnType<typeof io> }) {
   const [doctorCount, setDoctorCount] = useState<number>(0);
   const { medicinesList } = useVendingMachine();
   const [paymentQrImage, setPaymentQrImage] = useState<string | null>(null);
+  const [connectedDoctor, setConnectedDoctor] = useState<string | null>(null);
 
   const handleFormSubmit = (data: PatientFormData) => {
     setPatientInfo(data);
@@ -67,8 +68,9 @@ function VideoSection({ socket }: { socket: ReturnType<typeof io> }) {
 
         // Listen for the doctor's signal
         socket.off("doctor-accepted");
-        socket.on("doctor-accepted", ({ signal }) => {
+        socket.on("doctor-accepted", ({ signal, doctorId }) => {
           peer.signal(signal);
+          setConnectedDoctor(doctorId);
         });
 
         socket.off("vending-machine-update");
@@ -277,6 +279,7 @@ function VideoSection({ socket }: { socket: ReturnType<typeof io> }) {
             // Emit call-ended event to server
             socket.emit("end-call");
           }}
+          doctorSocket={connectedDoctor}
           isDoctor={false}
         />
       </div>
