@@ -142,7 +142,7 @@ export function MedicineList({
           />
         </div>
 
-        <div className="mb-4 sm:mb-6">
+        {/* <div className="mb-4 sm:mb-6">
           <Label htmlFor="payment-qr">Payment QR Code</Label>
           <div className="mt-2">
             <input
@@ -184,7 +184,7 @@ export function MedicineList({
               </div>
             )}
           </div>
-        </div>
+        </div> */}
 
         <h3 className="text-lg font-semibold mb-4">Available Medicines</h3>
         <ScrollArea className="h-[200px] sm:h-[300px] pr-4">
