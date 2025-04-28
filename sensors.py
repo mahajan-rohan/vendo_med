@@ -4,7 +4,7 @@ import random  # Replace this with actual sensor readings
 
 def get_sensor_data():
     return {
-        "pulse": random.randint(500, 600),
+        "heartRate": random.randint(500, 600),
         "temperature": round(36 + random.random(), 2)
     }
 

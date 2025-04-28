@@ -148,14 +148,14 @@ export default function VideoCallInterface({
 
         // Show the health data panel
         setShowHealthAnalysis(true);
-        setHealthData({...data});
+        setHealthData(data);
 
         // Display a toast notification
-        toast({
-          title: "Health Data Received",
-          description: `Patient's temperature: ${data.temperature}°C, Heart rate: ${data.pulse} BPM`,
-          duration: 5000,
-        });
+        // toast({
+        //   title: "Health Data Received",
+        //   description: `Patient's temperature: ${data.data.temperature}°C, Heart rate: ${data.data.pulse} BPM`,
+        //   duration: 5000,
+        // });
       });
     }
 
@@ -258,58 +258,59 @@ export default function VideoCallInterface({
     setShowHealthAnalysis(true);
     setIsScanning(true);
     setScanProgress(0);
-  
+
     // ✨ Trigger the backend API to run script
     try {
-      fetch('http://localhost:4000/api/start-script');
-      console.log('Sensor script started successfully.');
+      fetch("http://localhost:4000/api/start-script");
+      console.log("Sensor script started successfully.");
     } catch (error) {
-      console.error('Failed to start sensor script:', error);
+      console.error("Failed to start sensor script:", error);
     }
-  
+
     // Continue your scanning animation
     const interval = setInterval(() => {
       setScanProgress((prev) => {
         if (prev >= 100) {
           clearInterval(interval);
           setIsScanning(false);
-  
+
           // Generate random health data (or could be updated later from real sensor)
           const temperature = (36.5 + Math.random()).toFixed(1);
           const heartRate = Math.floor(60 + Math.random() * 40);
-  
+
           const data = {
             temperature: Number.parseFloat(temperature),
             heartRate: heartRate,
           };
-  
-          setHealthData(data);
-  
-          socket.emit("health-data", {
-            patientId: patientData?.patientId,
-            doctorId: doctorInfo?.id,
-            data: data,
-          });
-  
+
+          // socket.emit("health-data", {
+          //   patientId: patientData?.patientId,
+          //   doctorId: doctorInfo?.id,
+          //   data: data,
+          // });
+
           return 100;
         }
         return prev + 2;
       });
     }, 50);
+
+    socket.on("health-data", (data) => {
+      console.log("Health data from patient to doctor:", data);
+      setHealthData(data);
+    });
   };
-  
 
   const handleEndCall = async () => {
     // If doctor is ending the call, save the consultation
     if (isDoctor && patientData) {
-
       try {
-        fetch('http://localhost:4000/api/stop-script');
-        console.log('Sensor script stopped.');
+        fetch("http://localhost:4000/api/stop-script");
+        console.log("Sensor script stopped.");
       } catch (error) {
-        console.error('Failed to stop sensor script:', error);
+        console.error("Failed to stop sensor script:", error);
       }
-      
+
       try {
         const token = localStorage.getItem("token");
         if (!token) {
