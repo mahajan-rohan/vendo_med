@@ -77,7 +77,24 @@ function VideoSection({ socket }: { socket: ReturnType<typeof io> }) {
         socket.on("vending-machine-update", (data) => {
           console.log("Received data for vending machine:", data);
 
-          // Handle the data (e.g., dispense medicines)
+          const motorsToRun = data.prescriptions.map((_: any, i: number) =>
+            (i + 1).toString()
+          ); // ['1', '2', '3']
+
+          fetch("http://localhost:4000/run-script", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ motors: motorsToRun }),
+          })
+            .then((res) => res.text())
+            .then((output) => {
+              console.log("Python script ran:", output);
+            })
+            .catch((err) => {
+              console.error("Failed to run script:", err);
+            });
         });
 
         // Stop the media stream and clean up
