@@ -89,10 +89,7 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const unreadCount = notificationsList.filter((n) => !n.read).length;
-    document.title =
-      unreadCount > 0
-        ? `(${unreadCount}) VendoMed`
-        : "VendoMed";
+    document.title = unreadCount > 0 ? `(${unreadCount}) VendoMed` : "VendoMed";
   }, [notificationsList]);
 
   return (

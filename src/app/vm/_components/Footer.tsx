@@ -15,7 +15,7 @@ const Footer: React.FC<{
       {/* <Button variant="destructive" className="flex items-center">
         <Phone className="mr-2 h-4 w-4" /> Emergency Call
       </Button> */}
-      <Button
+      {/* <Button
         onClick={() => {
           onStartAnalysis();
           setShowSidebar(true);
@@ -23,7 +23,7 @@ const Footer: React.FC<{
         className="ml-auto bg-green-500 hover:bg-green-600"
       >
         Start Health Analysis
-      </Button>
+      </Button> */}
     </footer>
   );
 };

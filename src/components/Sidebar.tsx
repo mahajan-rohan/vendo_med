@@ -58,7 +58,7 @@ const Sidebar = () => {
             />
             <circle cx="32" cy="32" r="3" fill="white" />
           </svg>
-          TeleMed Connect
+          MediVend Health Station
         </Link>
       </div>
       <nav className="mt-8">
